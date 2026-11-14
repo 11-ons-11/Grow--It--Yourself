@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HydroWatch</title>
+<style>
+  body { font-family: Arial, sans-serif; max-width: 700px; margin: 30px auto; padding: 0 16px; background: #f1f6f3; }
+  h1 { color: #1b5e20; margin-bottom: 4px; }
+  #bandeau { margin: 16px 0; padding: 12px; border-radius: 6px; font-weight: bold; color: white; background: #2e7d32; }
+  #bandeau.alerte { background: #d32f2f; }
+  .cartes { display: flex; gap: 12px; flex-wrap: wrap; }
+  .carte { flex: 1; min-width: 180px; background: white; border: 2px solid #2e7d32; border-radius: 8px; padding: 14px; text-align: center; }
+  .carte.alerte { border-color: #d32f2f; background: #ffebee; color: #b71c1c; }
+  .valeur { font-size: 32px; font-weight: bold; }
+  #journal li { color: #b71c1c; margin-bottom: 4px; }
+</style>
+</head>
+<body>
+<h1>HydroWatch</h1>
+<p>Grow It Yourself : suivi des capteurs (mesures simulées toutes les 3 secondes)</p>
+
+<div id="bandeau">Tout est normal</div>
+<div class="cartes" id="cartes"></div>
+
+<h3>Journal des alertes</h3>
+<ul id="journal"></ul>
+
+<script>
+// GROW-42 : détection des anomalies (seuils min et max)
+const parametres = [
+  { nom: "pH", min: 5.5, max: 6.5, unite: "" },
+  { nom: "Température", min: 18, max: 28, unite: " °C" },
+  { nom: "Humidité", min: 50, max: 70, unite: " %" },
+];
+
+function mesurer() {
+  let nbAlertes = 0;
+  const heure = new Date().toLocaleTimeString("fr-FR");
+
+  document.getElementById("cartes").innerHTML = parametres.map(function (p) {
+    // Mesure simulée du capteur
+    const milieu = (p.min + p.max) / 2;
+    const val = +(milieu + (Math.random() - 0.5) * (p.max - p.min) * 1.2).toFixed(1);
+
+    // Détection : la valeur dépasse-t-elle le seuil ?
+    const hors = val < p.min || val > p.max;
+    if (hors) {
+      nbAlertes++;
+      const li = document.createElement("li");
+      li.textContent = heure + " : " + p.nom + " = " + val + (val < p.min ? " sous le minimum (" + p.min + ")" : " dépasse le maximum (" + p.max + ")");
+      journal.prepend(li);
+      while (journal.children.length > 8) journal.lastChild.remove();
+    }
+
+    return "<div class='carte" + (hors ? " alerte" : "") + "'>" +
+      "<div>" + p.nom + "</div>" +
+      "<div class='valeur'>" + val + p.unite + "</div>" +
+      "<small>Normal : " + p.min + " à " + p.max + "</small>" +
+      (hors ? "<div><b>ALERTE</b></div>" : "") + "</div>";
+  }).join("");
+
+  bandeau.className = nbAlertes ? "alerte" : "";
+  bandeau.textContent = nbAlertes ? "ALERTE : " + nbAlertes + " paramètre(s) hors seuil" : "Tout est normal";
+}
+
+mesurer();
+setInterval(mesurer, 3000);
+</script>
+</body>
+</html>

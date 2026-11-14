@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Détection des anomalies</title>
+</head>
+<body>
+<h1>Détection des anomalies</h1>
+pH <input id="ph" type="number" step="0.1"><br>
+Température (°C) <input id="temp" type="number"><br>
+Humidité (%) <input id="hum" type="number"><br>
+<button onclick="detecter()">Détecter</button>
+<p id="resultat"></p>
+
+<script>
+// GROW-42 : détection des anomalies
+const seuils = { "pH": [5.5, 6.5], "Température": [18, 28], "Humidité": [50, 70] };
+
+function detecter() {
+  if (!ph.value || !temp.value || !hum.value) {
+    resultat.textContent = "Remplis les 3 champs";
+    return;
+  }
+  const valeurs = { "pH": +ph.value, "Température": +temp.value, "Humidité": +hum.value };
+  let texte = "";
+  for (const nom in seuils) {
+    const [min, max] = seuils[nom];
+    const v = valeurs[nom];
+    if (v < min || v > max) {
+      const ecart = v < min ? min - v : v - max;
+      const gravite = ecart > (max - min) * 0.2 ? "CRITIQUE" : "ATTENTION";
+      texte += nom + " = " + v + " : " + gravite + "<br>";
+    }
+  }
+  resultat.innerHTML = texte || "NORMAL";
+}
+</script>
+</body>
+</html>
