@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>HydroWatch</title>
+<style>
+body{font-family:Arial;text-align:center;background:#f1f6f3;padding:20px}
+h1{color:#1b5e20}
+#bandeau{padding:12px;background:green;color:white;margin:15px}
+.cartes{display:flex;gap:10px;flex-wrap:wrap}
+.carte{background:white;border:2px solid green;padding:15px;flex:1}
+.alerte{background:#ffcccc!important;border-color:red!important;color:red}
+.valeur{font-size:30px;font-weight:bold}
+</style>
+</head>
+<body>
+<h1>HydroWatch</h1>
+<p>Grow It Yourself - Suivi des capteurs</p>
+<div id="bandeau">Tout est normal</div>
+<div id="cartes" class="cartes"></div>
+<h3>Journal des alertes</h3><ul id="journal"></ul>
+<script>
+const P=[["pH",5.5,6.5,""],["Température",18,28,"°C"],["Humidité",50,70,"%"]];
+function mesurer(){
+let alertes=0,heure=new Date().toLocaleTimeString();
+cartes.innerHTML=P.map(([n,min,max,u])=>{
+let v=+(min+Math.random()*(max-min)*1.2-(max-min)*.1).toFixed(1);
+let a=v<min||v>max;
+if(a){alertes++;journal.innerHTML=`<li>${heure} : ${n} = ${v} ${u} - ALERTE</li>`+journal.innerHTML;}
+return `<div class="carte ${a?'alerte':''}">${n}<div class="valeur">${v} ${u}</div><small>${min} à ${max}</small>${a?'<b>ALERTE</b>':''}</div>`;
+}).join("");
+bandeau.className=alertes?"alerte":"";
+bandeau.textContent=alertes?`ALERTE : ${alertes} anomalie(s)`:"Tout est normal";
+}
+mesurer();setInterval(mesurer,3000);
+</script>
+</body>
+</html>
