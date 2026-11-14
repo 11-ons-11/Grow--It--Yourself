@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HydroWatch – Détection des anomalies</title>
+<style>
+  :root {
+    --fond: #f1f6f3;
+    --carte: #ffffff;
+    --encre: #12332b;
+    --discret: #5b7068;
+    --trait: #d3e0da;
+    --accent: #0e7c66;
+    --normal: #1b7f4b;
+    --normal-fond: #e3f4ea;
+    --attention: #8a5300;
+    --attention-fond: #fdf0d8;
+    --critique: #a3241b;
+    --critique-fond: #fbe5e2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --fond: #0e1b17;
+      --carte: #16282f;
+      --encre: #e4f1ec;
+      --discret: #9db5ac;
+      --trait: #2c4540;
+      --accent: #4fc3a5;
+      --normal: #7ad9a0;
+      --normal-fond: #17382a;
+      --attention: #f2c56b;
+      --attention-fond: #3a2d12;
+      --critique: #ff9a90;
+      --critique-fond: #40201d;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 24px 16px 48px;
+    background: var(--fond);
+    color: var(--encre);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.6;
+  }
+  main { max-width: 640px; margin: 0 auto; }
+  h1 { font-size: 26px; font-weight: 600; margin: 0 0 4px; }
+  h2 { font-size: 18px; font-weight: 600; margin: 0 0 12px; }
+  .sous-titre { margin: 0 0 24px; color: var(--discret); }
+  section {
+    background: var(--carte);
+    border: 1px solid var(--trait);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .champs { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; }
+  label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  input {
+    width: 100%;
+    padding: 10px 12px;
+    font: inherit;
+    color: var(--encre);
+    background: var(--fond);
+    border: 1px solid var(--trait);
+    border-radius: 8px;
+  }
+  input:focus-visible, button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .erreur { color: var(--critique); font-size: 14px; min-height: 22px; margin: 10px 0 0; }
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+  button {
+    font: inherit;
+    font-weight: 600;
+    padding: 10px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--accent);
+    cursor: pointer;
+  }
+  .principal { background: var(--accent); color: var(--fond); }
+  .secondaire { background: transparent; color: var(--accent); }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--trait); }
+  th { color: var(--discret); font-weight: 600; }
+  .statut { padding: 14px 16px; border-radius: 10px; font-weight: 600; margin-bottom: 12px; }
+  .statut.normal { background: var(--normal-fond); color: var(--normal); }
+  .statut.anomalie { background: var(--critique-fond); color: var(--critique); }
+  ul { list-style: none; margin: 0; padding: 0; }
+  li {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+  }
+  li.CRITIQUE { background: var(--critique-fond); color: var(--critique); }
+  li.ATTENTION { background: var(--attention-fond); color: var(--attention); }
+  li strong { white-space: nowrap; }
+  .vide { color: var(--discret); margin: 0; }
+  @media (prefers-reduced-motion: no-preference) {
+    button { transition: opacity .15s; }
+    button:hover { opacity: .85; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>Détection des anomalies</h1>
+  <p class="sous-titre">HydroWatch · Grow It Yourself · ticket GROW-42</p>
+
+  <section aria-labelledby="titre-mesure">
+    <h2 id="titre-mesure">Saisir une mesure</h2>
+    <div class="champs">
+      <div>
+        <label for="ph">pH</label>
+        <input id="ph" type="number" step="0.1" placeholder="ex. 6.0">
+      </div>
+      <div>
+        <label for="temperature">Température (°C)</label>
+        <input id="temperature" type="number" step="0.1" placeholder="ex. 23">
+      </div>
+      <div>
+        <label for="humidite">Humidité (%)</label>
+        <input id="humidite" type="number" step="0.1" placeholder="ex. 60">
+      </div>
+    </div>
+    <p class="erreur" id="erreur" role="alert"></p>
+    <div class="actions">
+      <button class="principal" id="detecter">Détecter les anomalies</button>
+      <button class="secondaire" id="exemple-normal">Exemple normal</button>
+      <button class="secondaire" id="exemple-anomalie">Exemple avec anomalies</button>
+    </div>
+  </section>
+
+  <section aria-live="polite" aria-labelledby="titre-resultat">
+    <h2 id="titre-resultat">Résultat</h2>
+    <div id="resultat"><p class="vide">Saisis une mesure puis lance la détection.</p></div>
+  </section>
+
+  <section aria-labelledby="titre-seuils">
+    <h2 id="titre-seuils">Seuils de surveillance</h2>
+    <table>
+      <thead><tr><th>Paramètre</th><th>Minimum</th><th>Maximum</th></tr></thead>
+      <tbody id="tableau-seuils"></tbody>
+    </table>
+    <p class="vide" style="margin-top:12px">Un écart de plus de 20 % de la plage normale est classé critique.</p>
+  </section>
+</main>
+
+<script>
+  // GROW-42 : Développer la détection des anomalies
+
+  // 1. Seuils de surveillance (valeurs normales)
+  const seuils = {
+    ph: { nom: "pH", unite: "", min: 5.5, max: 6.5 },
+    temperature: { nom: "Température", unite: " °C", min: 18, max: 28 },
+    humidite: { nom: "Humidité", unite: " %", min: 50, max: 70 },
+  };
+
+  // 2. Fonction de détection
+  function detecterAnomalies(mesure) {
+    const anomalies = [];
+    for (const parametre in seuils) {
+      const valeur = mesure[parametre];
+      const { nom, unite, min, max } = seuils[parametre];
+
+      if (valeur < min || valeur > max) {
+        const ecart = valeur < min ? min - valeur : valeur - max;
+        const gravite = ecart > (max - min) * 0.2 ? "CRITIQUE" : "ATTENTION";
+        anomalies.push({ nom, unite, valeur, min, max, gravite });
+      }
+    }
+    return anomalies;
+  }
+
+  // 3. Affichage
+  const champs = {
+    ph: document.getElementById("ph"),
+    temperature: document.getElementById("temperature"),
+    humidite: document.getElementById("humidite"),
+  };
+  const zoneErreur = document.getElementById("erreur");
+  const zoneResultat = document.getElementById("resultat");
+
+  function afficherSeuils() {
+    const lignes = Object.values(seuils).map(
+      (s) => `<tr><td>${s.nom}</td><td>${s.min}${s.unite}</td><td>${s.max}${s.unite}</td></tr>`
+    );
+    document.getElementById("tableau-seuils").innerHTML = lignes.join("");
+  }
+
+  function afficherResultat(anomalies) {
+    if (anomalies.length === 0) {
+      zoneResultat.innerHTML = '<div class="statut normal">Statut : NORMAL. Toutes les valeurs sont dans les seuils.</div>';
+      return;
+    }
+    const liste = anomalies
+      .map(
+        (a) =>
+          `<li class="${a.gravite}"><span>${a.nom} = ${a.valeur}${a.unite} (normal : ${a.min} à ${a.max})</span><strong>${a.gravite}</strong></li>`
+      )
+      .join("");
+    zoneResultat.innerHTML =
+      `<div class="statut anomalie">Statut : ANOMALIE (${anomalies.length} détectée${anomalies.length > 1 ? "s" : ""})</div><ul>${liste}</ul>`;
+  }
+
+  function lancerDetection() {
+    const mesure = {};
+    for (const cle in champs) {
+      if (champs[cle].value === "") {
+        zoneErreur.textContent = "Renseigne les trois valeurs avant de lancer la détection.";
+        return;
+      }
+      mesure[cle] = parseFloat(champs[cle].value);
+    }
+    zoneErreur.textContent = "";
+    afficherResultat(detecterAnomalies(mesure));
+  }
+
+  function remplir(ph, temperature, humidite) {
+    champs.ph.value = ph;
+    champs.temperature.value = temperature;
+    champs.humidite.value = humidite;
+    lancerDetection();
+  }
+
+  document.getElementById("detecter").addEventListener("click", lancerDetection);
+  document.getElementById("exemple-normal").addEventListener("click", () => remplir(6.0, 23, 60));
+  document.getElementById("exemple-anomalie").addEventListener("click", () => remplir(7.2, 35, 48));
+
+  afficherSeuils();
+</script>
+</body>
+</html>
